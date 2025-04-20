@@ -1,8 +1,12 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
+
   datasource:
     url: jdbc:postgresql://localhost:5432/jobboard
     username: anuranpaul
     password: secret
+
   jpa:
     hibernate:
       ddl-auto: update

@@ -22,6 +22,6 @@ public class GlobalExceptionHandler {
         ex.printStackTrace(); // Optional: log with SLF4J
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.fail(Messages.INTERNAL_SERVER_ERROR));
+                .body(ApiResponse.fail(ex.getMessage()));
     }
 }

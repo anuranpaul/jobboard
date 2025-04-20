@@ -2,12 +2,9 @@ package com.jobboard.jobboard.controller;
 
 import com.jobboard.jobboard.model.Job;
 import com.jobboard.jobboard.repository.JobRepository;
+import com.jobboard.jobboard.service.JobService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;  
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import com.jobboard.jobboard.dto.ApiResponse;
 import com.jobboard.jobboard.exceptions.NotFoundException;
@@ -20,27 +17,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JobController {
 
+    private final JobService jobService;
     private final JobRepository jobRepository;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<Job>>> getAllJobs(
-        @RequestParam(required = false) String location,
-        @RequestParam(required = false) String tag
-    ) {
-        List<Job> jobs;
-
-        if (location != null) {
-            jobs = jobRepository.findByLocationContainingIgnoreCase(location);
-        } else if (tag != null) {
-            jobs = jobRepository.findByTagsContainingIgnoreCase(tag);
-        } else {
-            jobs = jobRepository.findAll();
-        }
-
+    public ResponseEntity<ApiResponse<List<Job>>> getJobs(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String tag,
+            @RequestParam(required = false) String minSalary) {
+        List<Job> jobs = jobService.searchJobs(keyword, location, tag, minSalary);
         if (jobs.isEmpty()) {
             throw new NotFoundException(Messages.NO_JOBS_FOUND);
         }
-
         return ResponseEntity.ok(ApiResponse.ok(Messages.JOBS_FOUND, jobs));
     }
 
@@ -51,5 +40,11 @@ public class JobController {
 
         return ResponseEntity.ok(ApiResponse.ok("Job found", job));
     }
-}
 
+    @PostMapping
+    public ResponseEntity<ApiResponse<Job>> createJob(@RequestBody Job job) {
+        Job savedJob = jobRepository.save(job);
+        return ResponseEntity.ok(ApiResponse.ok("Job created successfully", savedJob));
+    }
+
+}
