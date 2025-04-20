@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.jsoup.Jsoup;
+
 @Service
 @RequiredArgsConstructor
 public class JobScraperService {
@@ -34,16 +36,16 @@ public class JobScraperService {
         List<Job> jobs = dtos.stream()
             .limit(100)
             .map(dto -> {
-            Job job = new Job();
-            job.setTitle(dto.getTitle());
-            job.setCompanyName(dto.getCompany_name());
-            job.setLocation(dto.getCandidate_required_location());
-            job.setUrl(dto.getUrl());
-            job.setDescription(dto.getDescription());
-            job.setSalary(dto.getSalary());
-            job.setTags(String.join(",", dto.getTags()));
-            return job;
-        }).collect(Collectors.toList());
+                Job job = new Job();
+                job.setTitle(dto.getTitle());
+                job.setCompanyName(dto.getCompany_name());
+                job.setLocation(dto.getCandidate_required_location());
+                job.setUrl(dto.getUrl());
+                job.setDescription(Jsoup.parse(dto.getDescription()).text());
+                job.setSalary(dto.getSalary());
+                job.setTags(String.join(",", dto.getTags()));
+                return job;
+            }).collect(Collectors.toList());
 
         jobRepository.saveAll(jobs);
         cleanupIfJobCountExceedsLimit();
