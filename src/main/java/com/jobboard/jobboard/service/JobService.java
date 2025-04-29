@@ -2,50 +2,36 @@ package com.jobboard.jobboard.service;
 
 import com.jobboard.jobboard.model.Job;
 import com.jobboard.jobboard.repository.JobRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import com.jobboard.jobboard.util.SalaryParser;
 import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class JobService {
 
-    @Autowired
     private final JobRepository jobRepository;
 
-    public JobService(JobRepository jobRepository) {    
-        this.jobRepository = jobRepository;
-    }
-
-    public List<Job> searchJobs(String keyword, String location, String tag, String minSalary) {
-        // Clean and normalize the search parameters
-        String normalizedKeyword = normalizeSearchTerm(keyword);
-        String normalizedLocation = normalizeSearchTerm(location);
-        String normalizedTag = normalizeSearchTerm(tag);
-        
-        // Parse and normalize the minimum salary
-        Double normalizedMinSalary = null;
-        if (minSalary != null && !minSalary.trim().isEmpty()) {
-            SalaryParser.SalaryRange salaryRange = SalaryParser.parseSalary(minSalary);
-            normalizedMinSalary = salaryRange.getMin();
+    public Page<Job> searchJobs(String keyword, String location, String tag, String minSalary, Pageable pageable) {
+        // Parse minSalary if provided
+        Double minSalaryValue = null;
+        if (minSalary != null && !minSalary.isEmpty()) {
+            try {
+                minSalaryValue = Double.parseDouble(minSalary);
+            } catch (NumberFormatException e) {
+                // Log invalid format but don't fail the search
+                log.warn("Invalid minSalary format: {}", minSalary);
+            }
         }
-
-        // Log search parameters for debugging
-        log.debug("Search parameters - keyword: {}, location: {}, tag: {}, minSalary: {}", 
-            normalizedKeyword, normalizedLocation, normalizedTag, normalizedMinSalary);
-
-        List<Job> results = jobRepository.searchJobs(
-                normalizedKeyword,
-                normalizedLocation,
-                normalizedTag,
-                normalizedMinSalary);
-
-        log.debug("Found {} jobs matching the criteria", results.size());
-        return results;
+        
+        return jobRepository.searchJobs(keyword, location, tag, minSalaryValue, pageable);
     }
 
     private String normalizeSearchTerm(String term) {
