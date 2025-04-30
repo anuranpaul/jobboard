@@ -53,4 +53,35 @@ public interface JobRepository extends JpaRepository<Job, Long> {
         Pageable pageable
     );
 
+    @Query(value = """
+        SELECT tag, COUNT(*) as tag_count 
+        FROM (
+            SELECT unnest(string_to_array(tags, ',')) as tag 
+            FROM job
+        ) t 
+        GROUP BY tag 
+        ORDER BY tag_count DESC 
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<String> findTopTags(@Param("limit") int limit);
+
+    @Query(value = """
+        SELECT COUNT(DISTINCT j.id)
+          FROM job j
+         WHERE (:keyword   IS NULL
+                OR j.search_index @@ plainto_tsquery('english', :keyword))
+           AND (:location  IS NULL
+                OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%')))
+           AND (:tag       IS NULL
+                OR LOWER(j.tags)     LIKE LOWER(CONCAT('%', :tag, '%')))
+           AND (:minSalary IS NULL
+                OR j.min_salary >= :minSalary)
+        """, nativeQuery = true)
+    long countJobs(
+        @Param("keyword")   String keyword,
+        @Param("location")  String location,
+        @Param("tag")       String tag,
+        @Param("minSalary") Double minSalary
+    );
+
 }

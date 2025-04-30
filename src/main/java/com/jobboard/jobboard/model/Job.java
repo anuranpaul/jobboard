@@ -2,6 +2,7 @@ package com.jobboard.jobboard.model;
 
 import lombok.Data;
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "job")
@@ -40,9 +41,10 @@ public class Job {
     private String url;
 
     /**
-     * Let Postgres fill this in as a tsvector.  We tell JPA
-     * not to include it in INSERT/UPDATE SQL.
+     * PostgreSQL tsvector field for full-text search.
+     * Excluded from JSON serialization to reduce cache size.
      */
+    @JsonIgnore
     @Column(name = "search_index",
             columnDefinition = "tsvector",
             insertable = false,

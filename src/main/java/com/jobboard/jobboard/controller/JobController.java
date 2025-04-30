@@ -12,6 +12,7 @@ import com.jobboard.jobboard.constants.Messages;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.jobboard.jobboard.dto.PagedResponse;
 
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class JobController {
     private final JobRepository jobRepository;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<Job>>> getJobs(
+    public ResponseEntity<ApiResponse<PagedResponse<Job>>> getJobs(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String tag,
@@ -35,21 +36,23 @@ public class JobController {
         log.debug("Searching jobs - keyword: {}, location: {}, tag: {}, minSalary: {}, pageable: {}", 
             keyword, location, tag, minSalary, pageable);
             
-        Page<Job> jobs = jobService.searchJobs(keyword, location, tag, minSalary, pageable);
+        Page<Job> jobsPage = jobService.searchJobs(keyword, location, tag, minSalary, pageable);
+        PagedResponse<Job> response = PagedResponse.from(jobsPage);
         
-        if (jobs.isEmpty()) {
+        if (jobsPage.isEmpty()) {
             log.info("No jobs found for search criteria");
-            return ResponseEntity.ok(ApiResponse.ok(Messages.NO_JOBS_FOUND, jobs));
+            return ResponseEntity.ok(ApiResponse.ok(Messages.NO_JOBS_FOUND, response));
         }
         
-        return ResponseEntity.ok(ApiResponse.ok(Messages.JOBS_FOUND, jobs));
+        return ResponseEntity.ok(ApiResponse.ok(Messages.JOBS_FOUND, response));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Job>> getJobById(@PathVariable Long id) {
-        Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(Messages.JOB_NOT_FOUND + id));
-
+        Job job = jobService.getJobById(id);
+        if (job == null) {
+            throw new NotFoundException(Messages.JOB_NOT_FOUND + id);
+        }
         return ResponseEntity.ok(ApiResponse.ok("Job found", job));
     }
 

@@ -20,6 +20,7 @@ public class JobScraperService {
     private final JobRepository jobRepository;
     private final RestTemplate restTemplate = new RestTemplate();
     private static final String REMOTIVE_URL = "https://remotive.io/api/remote-jobs";
+    private final JobService jobService;
 
     public int scrapeAndSaveJobs() {
         RemotiveResponse response = restTemplate.getForObject(REMOTIVE_URL, RemotiveResponse.class);
@@ -58,6 +59,10 @@ public class JobScraperService {
 
         jobRepository.saveAll(jobs);
         cleanupIfJobCountExceedsLimit();
+        
+        // Clear caches after scraping
+        jobService.clearCache();
+        
         return jobs.size();
     }
 
